@@ -14,7 +14,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     
     /* Constants for TheMovieDB */
-    let apiKey = "ENTER_YOUR_API_KEY_HERE"
+    let apiKey = "2f4a91b6547014e919a67d9e96887097"
     let baseURLString = "http://api.themoviedb.org/3/"
     let baseURLSecureString = "https://api.themoviedb.org/3/"
     
