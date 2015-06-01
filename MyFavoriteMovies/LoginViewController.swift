@@ -141,6 +141,7 @@ class LoginViewController: UIViewController {
                 if let requestToken = parsedResult["request_token"] as? String {
                     self.appDelegate.requestToken = requestToken
                     println("gotRequestToken: \(requestToken)")
+                    self.loginWithToken(self.appDelegate.requestToken!)
                 } else {
                     dispatch_async(dispatch_get_main_queue()) {
                         self.debugTextLabel.text = "Login Failed. (Request Token)."
@@ -159,12 +160,60 @@ class LoginViewController: UIViewController {
         
         /* TASK: Login, then get a session id */
         /* 1. Set the parameters */
+        let methodParameters = [
+            "api_key": appDelegate.apiKey,
+            "request_token": requestToken,
+            "username": usernameTextField.text,
+            "password": passwordTextField.text
+        ]
+        
         /* 2. Build the URL */
+        let urlString = appDelegate.baseURLString + "authentication/token/validate_with_login" +
+            appDelegate.escapedParameters(methodParameters)
+        let url = NSURL(string: urlString)!
+        
         /* 3. Configure the request */
+        let request = NSMutableURLRequest(URL: url)
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
         /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
+        let task = session.dataTaskWithRequest(request) { data, responce, downloadError in
+            
+            if let error = downloadError {
+                dispatch_async(dispatch_get_main_queue()) {
+                    self.debugTextLabel.text = "Login Failed. (LoginWithToken)."
+                }
+            } else {
+
+                /* 5. Parse the data */
+                var parsingError: NSError? = nil
+                let parsedResult = NSJSONSerialization.JSONObjectWithData(data, options:
+                    NSJSONReadingOptions.AllowFragments, error: &parsingError) as! NSDictionary
+                
+                /* 6. Use the data! */
+                if let success = parsedResult["success"] as? Bool {
+                    if success {
+                        println("Login Complete!")
+                    }
+                } else {
+                    if let status_code = parsedResult["status_code"] as? Int {
+                        dispatch_async(dispatch_get_main_queue()) {
+                            self.debugTextLabel.text = parsedResult["status_message"] as?
+                                String
+                        }
+                    } else {
+                        dispatch_async(dispatch_get_main_queue()) {
+                            self.debugTextLabel.text = "Login Failed (Login Step)."
+                        }
+                        println("Could not find status_code in \(parsedResult)")
+                    }
+                }
+                
+            }
+        }
+
         /* 7. Start the request */
+        task.resume()
     }
     
     func getSessionID(requestToken: String) {
