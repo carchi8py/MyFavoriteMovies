@@ -298,6 +298,7 @@ class LoginViewController: UIViewController {
                 if let userID = parsedResult["id"] as? Int {
                     self.appDelegate.userID = userID
                     println(userID)
+                    self.completeLogin()
                 } else {
                     dispatch_async(dispatch_get_main_queue()) {
                         self.debugTextLabel.text = "Login Failed (getUserID)."
