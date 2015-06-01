@@ -194,6 +194,7 @@ class LoginViewController: UIViewController {
                 if let success = parsedResult["success"] as? Bool {
                     if success {
                         println("Login Complete!")
+                        self.getSessionID(self.appDelegate.requestToken!)
                     }
                 } else {
                     if let status_code = parsedResult["status_code"] as? Int {
@@ -220,12 +221,54 @@ class LoginViewController: UIViewController {
         
         /* TASK: Get a session ID, then store it (appDelegate.sessionID) and get the user's id */
         /* 1. Set the parameters */
+        let methodParameters = [
+            "api_key": appDelegate.apiKey,
+            "request_token": requestToken
+        ]
+        
         /* 2. Build the URL */
+        let urlString = appDelegate.baseURLString + "authentication/session/new" +
+            appDelegate.escapedParameters(methodParameters)
+        let url = NSURL(string: urlString)!
+        
         /* 3. Configure the request */
+        let request = NSMutableURLRequest(URL: url)
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
         /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
+        let task = session.dataTaskWithRequest(request) { data, responce, downloadError in
+            if let error = downloadError {
+                dispatch_async(dispatch_get_main_queue()) {
+                    self.debugTextLabel.text = "Login Failed. (getSession)."
+                }
+            } else {
+                /* 5. Parse the data */
+                var parsingError: NSError? = nil
+                let parsedResult = NSJSONSerialization.JSONObjectWithData(data, options:
+                    NSJSONReadingOptions.AllowFragments, error: &parsingError) as! NSDictionary
+                
+                /* 6. Use the data! */
+                if let success = parsedResult["success"] as? Bool {
+                    if success {
+                        println("Session created Complete!")
+                    }
+                } else {
+                    if let status_code = parsedResult["status_code"] as? Int {
+                        dispatch_async(dispatch_get_main_queue()) {
+                            self.debugTextLabel.text = parsedResult["status_message"] as?
+                            String
+                        }
+                    } else {
+                        dispatch_async(dispatch_get_main_queue()) {
+                            self.debugTextLabel.text = "Login Failed (getSession)."
+                        }
+                        println("Could not find status_code in \(parsedResult)")
+                    }
+                }
+            }
+        }
         /* 7. Start the request */
+        task.resume()
     }
     
     func getUserID(session_id : String) {
