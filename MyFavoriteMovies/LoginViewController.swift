@@ -248,22 +248,14 @@ class LoginViewController: UIViewController {
                     NSJSONReadingOptions.AllowFragments, error: &parsingError) as! NSDictionary
                 
                 /* 6. Use the data! */
-                if let success = parsedResult["success"] as? Bool {
-                    if success {
-                        println("Session created Complete!")
-                    }
+                if let sessionID = parsedResult["session_id"] as? String {
+                    self.appDelegate.sessionID = sessionID
+                    println(sessionID)
                 } else {
-                    if let status_code = parsedResult["status_code"] as? Int {
-                        dispatch_async(dispatch_get_main_queue()) {
-                            self.debugTextLabel.text = parsedResult["status_message"] as?
-                            String
-                        }
-                    } else {
-                        dispatch_async(dispatch_get_main_queue()) {
-                            self.debugTextLabel.text = "Login Failed (getSession)."
-                        }
-                        println("Could not find status_code in \(parsedResult)")
+                    dispatch_async(dispatch_get_main_queue()) {
+                        self.debugTextLabel.text = "Login Failed (getSession)."
                     }
+                    println("Could not find status_code in \(parsedResult)")
                 }
             }
         }
