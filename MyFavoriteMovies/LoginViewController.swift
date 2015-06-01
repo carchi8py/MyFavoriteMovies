@@ -251,6 +251,7 @@ class LoginViewController: UIViewController {
                 if let sessionID = parsedResult["session_id"] as? String {
                     self.appDelegate.sessionID = sessionID
                     println(sessionID)
+                    self.getUserID(self.appDelegate.sessionID!)
                 } else {
                     dispatch_async(dispatch_get_main_queue()) {
                         self.debugTextLabel.text = "Login Failed (getSession)."
@@ -267,12 +268,46 @@ class LoginViewController: UIViewController {
         
         /* TASK: Get the user's ID, then store it (appDelegate.userID) for future use and go to next view! */
         /* 1. Set the parameters */
+        let methodParameters = [
+            "api_key": appDelegate.apiKey,
+            "session_id": session_id
+        ]
         /* 2. Build the URL */
+        
+        let urlString = appDelegate.baseURLSecureString + "account" +
+            appDelegate.escapedParameters(methodParameters)
+        let url = NSURL(string: urlString)!
+        
         /* 3. Configure the request */
+        let request = NSMutableURLRequest(URL: url)
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
         /* 4. Make the request */
-        /* 5. Parse the data */
-        /* 6. Use the data! */
+        let task = session.dataTaskWithRequest(request) { data, responce, downloadError in
+            if let error = downloadError {
+                dispatch_async(dispatch_get_main_queue()) {
+                    self.debugTextLabel.text = "Login Failed. (getUserID)."
+                }
+            } else {
+                /* 5. Parse the data */
+                var parsingError: NSError? = nil
+                let parsedResult = NSJSONSerialization.JSONObjectWithData(data, options:
+                    NSJSONReadingOptions.AllowFragments, error: &parsingError) as! NSDictionary
+                
+                /* 6. Use the data! */
+                if let userID = parsedResult["id"] as? Int {
+                    self.appDelegate.userID = userID
+                    println(userID)
+                } else {
+                    dispatch_async(dispatch_get_main_queue()) {
+                        self.debugTextLabel.text = "Login Failed (getUserID)."
+                    }
+                    println("Could not find userID in \(parsedResult)")
+                }
+            }
+        }
         /* 7. Start the request */
+        task.resume()
     }
 }
 
